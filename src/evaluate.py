@@ -7,10 +7,13 @@ def _paired_arrays(y_true, values):
     """Validate inputs to prevent silent broadcasting or invalid results."""
     y_true = np.asarray(y_true, dtype=float)
     values = np.asarray(values, dtype=float)
+    
     if y_true.ndim != 1 or values.ndim != 1:
         raise ValueError("Inputs must be one-dimensional arrays.")
+    
     if y_true.size == 0 or y_true.shape != values.shape:
         raise ValueError("Inputs must be non-empty and have the same shape.")
+    
     if not np.all(np.isfinite(y_true)) or not np.all(np.isfinite(values)):
         raise ValueError("Inputs must contain only finite numbers.")
     return y_true, values
@@ -119,3 +122,4 @@ def compare(name_to_metrics: dict) -> None:
     print("-+-".join("-" * width for width in widths))
     for row in rows:
         print(format_row(row))
+
