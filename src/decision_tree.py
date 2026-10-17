@@ -43,6 +43,7 @@ class DecisionTree:
         min_samples_leaf: int = 1,
         min_impurity_decrease: float = 0.0,
         random_state: int = 42,
+        max_features=None,
     ):
         self.task = task
         self.criterion = criterion
@@ -51,6 +52,7 @@ class DecisionTree:
         self.min_samples_leaf = min_samples_leaf
         self.min_impurity_decrease = min_impurity_decrease
         self.random_state = random_state
+        self.max_features=max_features
         self.root: Node | None = None
 
     # --- impurity -----------------------------------------------------------
@@ -88,7 +90,12 @@ class DecisionTree:
 
         best_split=None
         best_gain=0.0
-        for feature in range(n_features):
+        features=range(n_features)
+        if self.max_features_ < n_features:
+            features=np.sort(self._rng.choice(
+                n_features,size=self.max_features_,replace=False
+            ))
+        for feature in features:
             values=np.unique(X[:,feature])
             if values.size<2:
                 continue
@@ -193,6 +200,8 @@ class DecisionTree:
             raise ValueError(
                 "Task must be 'classification' or 'regression'."
             )
+        self.max_features_=self._resolve_max_features(X.shape[1])
+        self._rng=np.random.default_rng(self.random_state)
         self.n_samples_ = y.size
         self.feature_importances_=np.zeros(X.shape[1],dtype=float)
         self.root = self._grow(X, y, depth=0)
@@ -200,6 +209,17 @@ class DecisionTree:
         if total_importance>0.0:
             self.feature_importances_ /=total_importance
         return self
+
+    def _resolve_max_features(self, n_features):
+        if self.max_features is None:
+            return n_features
+        if isinstance(self.max_features,str) and self.max_features=="sqrt":
+            return max(1,int(np.sqrt(n_features)))
+        if (isinstance(self.max_features,(int,np.integer))
+                and not isinstance(self.max_features,(bool,np.bool_))
+                and 1<=self.max_features<=n_features):
+            return int(self.max_features)
+        raise ValueError("max_features must be None, 'sqrt', or an integer in [1, n_features].")
 
     def _predict_one(self, x, node: Node):
         while not node.is_leaf():
