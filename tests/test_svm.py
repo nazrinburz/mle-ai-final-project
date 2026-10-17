@@ -29,7 +29,7 @@ def test_all():
           "| margin", m.margin_width_, "| #SV", len(m.support_vector_indices()))
     assert acc > 0.9 and h[-1, 1] < h[0, 1]
 
-    from sklearn.svm import LinearSVC.                # baseline check
+    from sklearn.svm import LinearSVC                # baseline check
     sk = LinearSVC(C=1 / (1000 * 1e-3), loss="hinge", max_iter=100000).fit(Xtr_s, ytr)
     print("sklearn acc", (sk.predict(Xva_s) == yva).mean())
 
