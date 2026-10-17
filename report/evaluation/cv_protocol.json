@@ -1,0 +1,8 @@
+{
+  "folds": 3,
+  "seed": 42,
+  "scope": "Original training partition only; training-fitted preprocessing in each fold",
+  "selection": "Fixed configurations previously selected on validation; non-nested, conditional CV, not an unbiased nested selection estimate",
+  "tier": "Training-fold price median; outliers removed from fit fold only",
+  "final_test": "Not accessed in CV scoring"
+}
