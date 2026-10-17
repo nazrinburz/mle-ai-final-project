@@ -143,6 +143,9 @@ class DecisionTree:
 
         if weighted_gain<self.min_impurity_decrease:
             return node
+
+        self.feature_importances_[feature] += weighted_gain
+
         node.feature=feature
         node.threshold=threshold
 
@@ -159,16 +162,78 @@ class DecisionTree:
     def fit(self, X, y):
         X = np.asarray(X, dtype=float)
         y = np.asarray(y)
+        if X.ndim!=2:
+            raise ValueError("X must be a 2D array.")
+
+        if y.ndim!=1:
+            raise ValueError("y must be a 1D array.")
+
+        if X.shape[0]!=y.size:
+            raise ValueError("X and y must have the same number of samples.")
+
+        if X.shape[0]==0 or X.shape[1]==0:
+            raise ValueError("Training data must contain samples and features.")
+
+        if not np.isfinite(X).all():
+            raise ValueError("X must contain only finite numeric values.")
+
+        if self.task=="classification":
+            if not np.isin(y, [0, 1]).all():
+                raise ValueError("Classification labels must be 0 or 1.")
+
+            y = y.astype(int)
+
+        elif self.task=="regression":
+            y = y.astype(float)
+
+            if not np.isfinite(y).all():
+                raise ValueError("Regression targets must be finite.")
+
+        else:
+            raise ValueError(
+                "Task must be 'classification' or 'regression'."
+            )
         self.n_samples_ = y.size
+        self.feature_importances_=np.zeros(X.shape[1],dtype=float)
         self.root = self._grow(X, y, depth=0)
+        total_importance=np.sum(self.feature_importances_)
+        if total_importance>0.0:
+            self.feature_importances_ /=total_importance
         return self
 
     def _predict_one(self, x, node: Node):
-        raise NotImplementedError("TODO: traverse to a leaf")
+        while not node.is_leaf():
+            if x[node.feature]<=node.threshold:
+                node=node.left
+            else:
+                node=node.right
+        return node.value
 
     def predict(self, X):
-        raise NotImplementedError("TODO: predict")
+        if self.root is None:
+            raise ValueError("Call fit() before predict().")
+        X=np.asarray(X,dtype=float)
+        predictions=[]
+
+        for x in X:
+            prediction=self._predict_one(x,self.root)
+            predictions.append(prediction)
+        return np.asarray(predictions)
 
     def predict_proba(self, X):
         """Classification only: return class probabilities from leaf counts."""
-        raise NotImplementedError("TODO: predict_proba (classification)")
+        if self.task!="classification":
+            raise ValueError("predict_proba is available only for classification")
+        if self.root is None:
+            raise ValueError("Call fit() before predict_proba().")
+        X=np.asarray(X,dtype=float)
+        probabilities=[]
+        for x in X:
+            node=self.root
+            while not node.is_leaf():
+                if x[node.feature]<=node.threshold:
+                    node=node.left
+                else:
+                    node=node.right
+            probabilities.append(node.proba)
+        return np.asarray(probabilities).reshape(-1,2)
