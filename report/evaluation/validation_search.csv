@@ -1,0 +1,23 @@
+model,parameters,validation_score,fit_seconds
+Tree regression,"{""task"": ""regression"", ""criterion"": ""mse"", ""max_depth"": 3, ""min_samples_leaf"": 5, ""random_state"": 42}",-792778.8488311155,54.69769610000003
+Tree regression,"{""task"": ""regression"", ""criterion"": ""mse"", ""max_depth"": 3, ""min_samples_leaf"": 15, ""random_state"": 42}",-792778.8488311155,57.72758709999994
+Tree regression,"{""task"": ""regression"", ""criterion"": ""mse"", ""max_depth"": 6, ""min_samples_leaf"": 5, ""random_state"": 42}",-788945.0165687968,70.13572969999996
+Tree regression,"{""task"": ""regression"", ""criterion"": ""mse"", ""max_depth"": 6, ""min_samples_leaf"": 15, ""random_state"": 42}",-788953.3474231681,79.78642429999991
+Tree classification,"{""task"": ""classification"", ""criterion"": ""gini"", ""max_depth"": 3, ""min_samples_leaf"": 5, ""random_state"": 42}",0.8292365998917163,107.00001169999996
+Tree classification,"{""task"": ""classification"", ""criterion"": ""gini"", ""max_depth"": 3, ""min_samples_leaf"": 15, ""random_state"": 42}",0.8292365998917163,102.47580190000008
+Tree classification,"{""task"": ""classification"", ""criterion"": ""gini"", ""max_depth"": 6, ""min_samples_leaf"": 5, ""random_state"": 42}",0.876486341724692,151.74980689999984
+Tree classification,"{""task"": ""classification"", ""criterion"": ""gini"", ""max_depth"": 6, ""min_samples_leaf"": 15, ""random_state"": 42}",0.8757637474541751,140.7736894000002
+Tree classification,"{""task"": ""classification"", ""criterion"": ""entropy"", ""max_depth"": 3, ""min_samples_leaf"": 5, ""random_state"": 42}",0.8292273823251912,104.83891999999992
+Tree classification,"{""task"": ""classification"", ""criterion"": ""entropy"", ""max_depth"": 3, ""min_samples_leaf"": 15, ""random_state"": 42}",0.8292273823251912,105.63479069999994
+Tree classification,"{""task"": ""classification"", ""criterion"": ""entropy"", ""max_depth"": 6, ""min_samples_leaf"": 5, ""random_state"": 42}",0.87444041782136,129.98311419999982
+Tree classification,"{""task"": ""classification"", ""criterion"": ""entropy"", ""max_depth"": 6, ""min_samples_leaf"": 15, ""random_state"": 42}",0.8744136460554371,135.81336960000044
+SVM linear,"{""lambda_"": 0.001, ""n_iters"": 20000, ""random_state"": 42, ""n_rff"": 0, ""gamma"": null}",0.8084312218684817,0.844738000000234
+SVM linear,"{""lambda_"": 0.01, ""n_iters"": 20000, ""random_state"": 42, ""n_rff"": 0, ""gamma"": null}",0.8390141583639223,0.8160172000002603
+SVM RFF,"{""lambda_"": 0.001, ""n_iters"": 20000, ""random_state"": 42, ""n_rff"": 100, ""gamma"": 0.01}",0.7631241997439181,0.7744567999998253
+SVM RFF,"{""lambda_"": 0.01, ""n_iters"": 20000, ""random_state"": 42, ""n_rff"": 100, ""gamma"": 0.01}",0.7112660710394422,1.1177793000001657
+Ridge,"{""lambda_"": 1.0}",-787351.5581272697,0.2406821999998101
+Ridge,"{""lambda_"": 10.0}",-787353.4807875829,0.151608799999849
+SVR,"{""lambda_"": 0.001, ""epsilon"": 1000.0, ""n_iters"": 20000, ""random_state"": 42}",-6070020.530024553,1.361495300000115
+SVR,"{""lambda_"": 0.01, ""epsilon"": 1000.0, ""n_iters"": 20000, ""random_state"": 42}",-1106723.4898974157,1.610748799999783
+Forest,"{""n_estimators"": 10, ""max_depth"": 3, ""min_samples_leaf"": 5, ""random_state"": 42}",-809718.4929529245,65.32333719999997
+Forest,"{""n_estimators"": 10, ""max_depth"": 6, ""min_samples_leaf"": 5, ""random_state"": 42}",-803680.2686763061,64.36912080000002

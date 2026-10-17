@@ -1,0 +1,17 @@
+Technical interpretation notes
+
+Protocol remains provisional pending team agreement on training-only IQR removal. Training upper bound: 616500 AZN; held-out valid expensive listings are retained. Premium threshold: 210000 AZN (original untrimmed training median).
+
+Bootstrap intervals describe resampling uncertainty on a fixed held-out set for fixed fitted models. They are not cross-validation standard deviations.
+
+Training-only CV uses fixed configurations previously chosen on validation. It is non-nested and conditional on that configuration selection, not an unbiased nested-CV estimate of the entire selection procedure. The original test partition is not scored in CV.
+
+Classification confusion matrix rows are true labels, columns predicted labels, standard=0 and premium=1. Summary fractions are derived from saved predictions.
+
+Feature importances are impurity-decrease importances, not causal effects; continuous/high-cardinality variables can be favored. SVM coefficients refer to standardized inputs; signs show direction of contribution conditional on the other encoded inputs, not causation. Dummy coefficients depend on encoding/reference categories.
+
+The old label sklearn SVM RFF refers to exact RBF SVC. Use comparison_table.csv and roc_corrected_labels.png for corrected display labels. This baseline differs from the custom random Fourier approximation.
+
+Fit_seconds records only the selected fit, excluding hyperparameter-search cost. Predict_seconds excludes score/probability calculations, so it is not full evaluation time. Baselines have matched settings where feasible, but use different optimization/tie-breaking. Forests use 10 trees. RFF gamma and feature-map dimension were fixed, not tuned here. A matched linear sklearn SVR baseline is included in the completed test and CV tables. The source IQR protocol remains pending team agreement.
+
+Test error analysis is descriptive. No test observations were removed and no parameters were changed based on these test results. Large price errors do not establish that raw listings are invalid.

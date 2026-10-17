@@ -1,0 +1,49 @@
+model,metric,lower_95,upper_95,bootstrap_samples,method
+Tree regression,RMSE,518528.9865061572,943627.2972067968,500,paired test bootstrap; conditional on fitted model
+Tree regression,MAE,123541.27090543525,150576.9675869919,500,paired test bootstrap; conditional on fitted model
+Tree regression,R2,0.0311326057795042,0.0882010383714279,500,paired test bootstrap; conditional on fitted model
+Tree classification,Precision,0.8964757135928111,0.9142011199011808,500,paired test bootstrap; conditional on fitted model
+Tree classification,Recall,0.8432971708583703,0.8634293530656586,500,paired test bootstrap; conditional on fitted model
+Tree classification,F1,0.8710072460137869,0.8850983154975371,500,paired test bootstrap; conditional on fitted model
+Tree classification,ROC-AUC,0.9405480906089276,0.9497569942841648,500,paired test bootstrap; conditional on fitted model
+SVM linear,Precision,0.8300842075866737,0.8504009704252422,500,paired test bootstrap; conditional on fitted model
+SVM linear,Recall,0.817467712479597,0.8377910832072674,500,paired test bootstrap; conditional on fitted model
+SVM linear,F1,0.8253961741803543,0.8416295717112103,500,paired test bootstrap; conditional on fitted model
+SVM linear,ROC-AUC,0.9039306150683304,0.9158435322466968,500,paired test bootstrap; conditional on fitted model
+SVM RFF,Precision,0.7704221917714947,0.79498065991076,500,paired test bootstrap; conditional on fitted model
+SVM RFF,Recall,0.7248762848944457,0.7485620586570443,500,paired test bootstrap; conditional on fitted model
+SVM RFF,F1,0.7496820601517764,0.7680487618356777,500,paired test bootstrap; conditional on fitted model
+SVM RFF,ROC-AUC,0.8395263196036302,0.8548836039491807,500,paired test bootstrap; conditional on fitted model
+Ridge,RMSE,522484.1369091479,861051.1507377812,500,paired test bootstrap; conditional on fitted model
+Ridge,MAE,128826.6387060698,155675.48763366725,500,paired test bootstrap; conditional on fitted model
+Ridge,R2,0.0359827478888654,0.2156076165217655,500,paired test bootstrap; conditional on fitted model
+SVR,RMSE,738900.9355199252,1446142.3619266136,500,paired test bootstrap; conditional on fitted model
+SVR,MAE,152445.60388933445,196173.1946406477,500,paired test bootstrap; conditional on fitted model
+SVR,R2,-2.193078946440488,-0.4403181247509403,500,paired test bootstrap; conditional on fitted model
+Forest,RMSE,539644.9322541712,960403.3028346464,500,paired test bootstrap; conditional on fitted model
+Forest,MAE,147147.2346644145,175013.22137194264,500,paired test bootstrap; conditional on fitted model
+Forest,R2,-0.0017625888787144,0.0148921057346536,500,paired test bootstrap; conditional on fitted model
+sklearn Tree regression,RMSE,518528.9865061572,943627.2972067968,500,paired test bootstrap; conditional on fitted model
+sklearn Tree regression,MAE,123541.27090543525,150576.9675869919,500,paired test bootstrap; conditional on fitted model
+sklearn Tree regression,R2,0.0311326057795042,0.0882010383714279,500,paired test bootstrap; conditional on fitted model
+sklearn Tree classification,Precision,0.8964757135928111,0.9142011199011808,500,paired test bootstrap; conditional on fitted model
+sklearn Tree classification,Recall,0.8432971708583703,0.8634293530656586,500,paired test bootstrap; conditional on fitted model
+sklearn Tree classification,F1,0.8710072460137869,0.8850983154975371,500,paired test bootstrap; conditional on fitted model
+sklearn Tree classification,ROC-AUC,0.940454695903748,0.949757837469548,500,paired test bootstrap; conditional on fitted model
+sklearn Ridge,RMSE,522484.1369091476,861051.1507377811,500,paired test bootstrap; conditional on fitted model
+sklearn Ridge,MAE,128826.6387060698,155675.48763366728,500,paired test bootstrap; conditional on fitted model
+sklearn Ridge,R2,0.0359827478888663,0.2156076165217655,500,paired test bootstrap; conditional on fitted model
+sklearn Forest,RMSE,535465.2413063025,956687.1475724246,500,paired test bootstrap; conditional on fitted model
+sklearn Forest,MAE,146348.6014742254,174257.3056212453,500,paired test bootstrap; conditional on fitted model
+sklearn Forest,R2,0.0060188047312933,0.0282937844280919,500,paired test bootstrap; conditional on fitted model
+sklearn SVM linear,Precision,0.8550370589391111,0.8743759866362908,500,paired test bootstrap; conditional on fitted model
+sklearn SVM linear,Recall,0.846099433525801,0.8666939548782517,500,paired test bootstrap; conditional on fitted model
+sklearn SVM linear,F1,0.8524336976534649,0.8670028681741617,500,paired test bootstrap; conditional on fitted model
+sklearn SVM linear,ROC-AUC,0.9333246400459516,0.9420723696052838,500,paired test bootstrap; conditional on fitted model
+sklearn SVM RFF,Precision,0.827246408101799,0.8497464630826709,500,paired test bootstrap; conditional on fitted model
+sklearn SVM RFF,Recall,0.7667978833101534,0.7886767393803439,500,paired test bootstrap; conditional on fitted model
+sklearn SVM RFF,F1,0.7984927423634977,0.8145360428458114,500,paired test bootstrap; conditional on fitted model
+sklearn SVM RFF,ROC-AUC,0.9073498476420768,0.9177217636496864,500,paired test bootstrap; conditional on fitted model
+sklearn SVR,RMSE,478318.5334802353,2335488.8001156896,500,paired test bootstrap; conditional on fitted model
+sklearn SVR,MAE,111316.98969855909,164894.19058926927,500,paired test bootstrap; conditional on fitted model
+sklearn SVR,R2,-5.502817334968384,0.28313040550795954,500,paired test bootstrap; conditional on fitted model

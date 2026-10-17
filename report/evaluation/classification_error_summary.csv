@@ -1,0 +1,7 @@
+model,TN,FP,FN,TP,test_samples
+sklearn SVM linear,4199,647,696,4127,9669
+sklearn SVM RBF,4121,725,1071,3752,9669
+sklearn Tree classification,4415,431,710,4113,9669
+SVM linear,4089,757,832,3991,9669
+SVM RFF,3860,986,1267,3556,9669
+Tree classification,4415,431,710,4113,9669
