@@ -22,6 +22,11 @@ Keep `contribution_report.md` in the repo root (checked at the demo).
 - **Task B — Classification:** predict a derived **price tier**
   (premium vs standard, median split on the training set).
 
+The evaluation pipeline reports both raw-price regression and a `log1p(price)`
+regression benchmark. Log-target predictions are converted back to AZN before
+RMSE, MAE, and R2 are calculated, so the two regression variants are directly
+comparable.
+
 ## Golden rule
 Your **decision tree** and your **SVM** must be **your own NumPy code**.
 scikit-learn is for the comparison baselines (and the optional bonuses)

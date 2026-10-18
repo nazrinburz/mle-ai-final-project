@@ -1,0 +1,168 @@
+feature,weight
+lat,0.006497396048746413
+lng,0.08213468193975887
+rooms,1.5377030812749788
+area_m2,0.9214104751500583
+land_area_sot,0.007086817334169143
+floor,-0.028044680789227287
+total_floors,0.4583469441345046
+floor_missing,-0.14343825170245686
+total_floors_missing,-0.14343825170245686
+renovation_yoxdur,0.060108878183424634
+renovation_nan,0.08103357740899324
+deed_status_yoxdur,-0.04419856321834819
+mortgage_status_nan,-0.015140854790911231
+location_1-ci mikrorayon q.,1.017947487673557
+location_2-ci Alatava q.,-0.007202355380897288
+location_2-ci mikrorayon q.,-0.009298423352725956
+location_20 Yanvar m.,-0.06441857214448937
+location_20-ci sahə q.,-0.1863406548499048
+location_28 May m.,0.23365514865902487
+location_28 May q.,0.5027545181808881
+location_3-cü mikrorayon q.,0.3101022628444663
+location_4-cü mikrorayon q.,-0.013792781014700767
+location_5-ci mikrorayon q.,-0.008316663156226558
+location_6-cı mikrorayon q.,-0.016107269329448812
+location_7-ci mikrorayon q.,0.002385240185896703
+location_8 Noyabr m.,0.040956501166820786
+location_8-ci kilometr q.,0.06070069309174968
+location_8-ci mikrorayon q.,-0.0580509949531495
+location_9-cu mikrorayon q.,-0.056682328813240174
+location_Abşeron r.,-0.13462193394224184
+location_Albalılıq q.,-0.0332905636821564
+location_Astara,-0.014406262352639025
+location_Avtovağzal m.,-0.050330909503783494
+location_Azadlıq Prospekti m.,0.10038250762567717
+location_Ağ şəhər q.,0.2809220401874473
+location_Ağdam,-0.007202355380897288
+location_Aşağı Güzdək q.,-0.3220061180528271
+location_Badamdar q.,0.11723314866975755
+location_Bahar q.,-0.011002306211963441
+location_Bakmil m.,-0.015560914288032877
+location_Bakıxanov q.,-0.18761237506925546
+location_Balaxanı q.,-0.26509241961581165
+location_Bayıl q.,0.06530735039209702
+location_Bibi Heybət q.,-0.46641985469423874
+location_Bilgəh q.,0.13121527251011555
+location_Biləcəri q.,-0.13712962467945844
+location_Binə q.,-0.33313718709534923
+location_Binəqədi q.,-0.0644677947739125
+location_Binəqədi r.,-0.1307714942228853
+location_Buzovna q.,-0.06993855333929691
+location_Böyükşor q.,-0.32200611805283164
+location_Bülbülə q.,-0.2068016261029593
+location_Ceyranbatan q.,-0.24215488619391068
+location_Digah q.,-0.3220061180528242
+location_Dübəndi q.,-0.1996146744800986
+location_Dədə Qorqud q.,-0.3364037494528738
+location_Dərnəgül m.,-0.04637185817640105
+location_Elmlər Akademiyası m.,0.17473436891029048
+location_Fatmayı q.,-0.03580132275490955
+location_Görədil q.,-0.04014427499399437
+location_Günəşli q.,-0.0131507433042028
+location_Gürgən q.,-0.004158182303013332
+location_Gənclik m.,0.14313256709827696
+location_Hökməli q.,-0.0322319046762168
+location_Hövsan q.,-0.28257375905973725
+location_Həzi Aslanov m.,-0.1863832431263181
+location_Həzi Aslanov q.,-0.024575884877769277
+location_Keşlə q.,-0.2374769456216638
+location_Koroğlu m.,-0.042457665502037945
+location_Kubinka q.,0.29442055602342926
+location_Köhnə Günəşli q.,-0.1346219339422427
+location_Kürdəxanı q.,-0.02852276556098228
+location_Lökbatan q.,-0.14978007062233875
+location_M.Ə.Rəsulzadə q.,-0.18799550144641258
+location_Masazır q.,-0.32528235814421497
+location_Massiv A q.,-0.004158182303013332
+location_Massiv D q.,-0.19744787442822473
+location_Massiv G q.,-0.007202355380897289
+location_Massiv V q.,-0.2290703475590165
+location_Maştağa q.,-0.319433938971633
+location_Mehdiabad q.,-0.21172945233746654
+location_Memar Əcəmi m.,-0.03092149192284593
+location_Müşfiqabad q.,-0.014406262352639004
+location_Məmmədli q.,-0.14009461521173158
+location_Mərdəkan q.,0.36991831160884153
+location_NZS q.,-0.1764362317584711
+location_Nardaran q.,0.03974928425206429
+location_Naxçıvan MR,-0.009298423352724215
+location_Neftçilər m.,-0.02329122464228292
+location_Nizami m.,0.211982423401174
+location_Nizami r.,0.020439213889409665
+location_Novxanı q.,-0.08239560487190961
+location_Nəriman Nərimanov m.,0.15288607825674963
+location_Nərimanov r.,0.18337169793151606
+location_Nəsimi m.,-0.005208998124917861
+location_Nəsimi r.,0.21934796784521599
+location_Pirallahı r.,-0.014994692730209376
+location_Pirşağı q.,-0.03406310060207318
+location_Pirəkəşkül q.,-0.01018603433477569
+location_Puta q.,-0.005880628174172056
+location_Qala q.,-0.033029061379330656
+location_Qara Qarayev m.,-0.03759015182980816
+location_Qaradağ r.,-0.009298423352724723
+location_Qaraçuxur q.,0.06896642365151968
+location_Qobu q.,-0.024959549080885914
+location_Qobustan q.,-0.5193878444933312
+location_Ramana q.,-0.03431677261997115
+location_Sabunçu q.,-0.026638110718539387
+location_Sabunçu r.,-0.0401442749939942
+location_Sahil m.,0.3398784412377085
+location_Sahil q.,-0.011002306211965957
+location_Saray q.,-0.2236833426189313
+location_Savalan q.,-0.16346106094442825
+location_Sulutəpə q.,-0.03481860851208205
+location_Sumqayıt,-0.008316663156226558
+location_Suraxanı q.,0.23079660330363258
+location_Suraxanı r.,-0.1718305249145839
+location_Səbail r.,0.13836099978565108
+location_Səngəçal q.,-0.007202355380897289
+location_Türkan q.,-0.030290877501123862
+location_Ulduz m.,-0.008316663156226558
+location_Xalqlar Dostluğu m.,-0.15342587868128335
+location_Xaçmaz,-0.03249978338465966
+location_Xocəsən m.,-0.24720193988278413
+location_Xocəsən q.,-0.22907034755901365
+location_Xutor q.,-0.005880628174176025
+location_Xırdalan,-0.0438669460390618
+location_Xətai r.,-0.026183505273733473
+location_Xəzər r.,0.10860358592472835
+location_Yasamal q.,0.01550197430419578
+location_Yasamal r.,0.09404956098168417
+location_Yeni Balaxanı q.,-0.004158182303013326
+location_Yeni Günəşli q.,-0.18849873346747562
+location_Yeni Ramana q.,-0.30667752972527024
+location_Yeni Suraxanı q.,-0.018600185796829937
+location_Yeni Yasamal q.,-0.05958754639101766
+location_Zabrat q.,-0.14253347340300562
+location_Zirə q.,-0.01812900154957446
+location_Zuğulba q.,0.7168658703967973
+location_Zığ q.,-0.15113568260717822
+location_Çiçək q.,-0.004158182303013326
+location_İnşaatçılar m.,-0.016458661270387354
+location_İçəri Şəhər m.,0.17319162814634623
+location_Şah İsmayıl Xətai m.,0.25838841083845204
+location_Şağan q.,-0.030290877501124677
+location_Şimal DRES q.,-0.012475741217028269
+location_Şüvəlan q.,0.23421335855914502
+location_Şıxov q.,0.11521235223815639
+location_Şərq q.,-0.004158182303013332
+location_Əhmədli m.,-0.09103281262506423
+location_Əhmədli q.,-0.07856830188419313
+location_Ələt q.,-0.007202355380897289
+location_Əmircan q.,-0.15417008437621793
+city_astara,-0.014406262352639025
+city_ağdam,-0.007202355380897288
+city_bakı,0.05835086253738079
+city_naxçıvan mr,-0.009298423352724215
+city_sumqayıt,-0.008316663156226558
+city_xaçmaz,-0.03249978338465966
+city_xırdalan,-0.0438669460390618
+category_Həyət evi/Bağ evi,-0.19737928581817168
+category_Köhnə tikili,-0.278251470278436
+category_Obyekt,0.23831071281711022
+category_Ofis,-0.026961331621467927
+category_Qaraj,-0.18634065484990497
+category_Torpaq,-0.09078783878105529
+category_Yeni tikili,0.3456735323774172
