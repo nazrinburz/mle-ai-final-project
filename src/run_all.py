@@ -4,6 +4,8 @@ Run from repository root: python -m src.run_all. Default: full dataset.
 Use --max-rows 400 --iterations 1000 for a clearly labelled smoke check.
 Use --max-rows 0 for all rows; the team's exhaustive trees can be very slow.
 Results are conditional on this protocol, not automatically final report results.
+Regression is evaluated with both raw-price and log1p(price) targets; all
+reported regression metrics are after converting log predictions back to AZN.
 """
 from __future__ import annotations
 
@@ -40,48 +42,25 @@ def classification_metrics(y_true, y_pred, scores):
     return {"Precision": precision, "Recall": recall, "F1": f1, "ROC-AUC": evaluate.roc_auc(y_true, scores)}
 
 
+def is_log_regression(name):
+    return name.endswith(" log")
+
+
+def regression_target(name, y):
+    values = np.asarray(y, dtype=float)
+    return np.log1p(values) if is_log_regression(name) else values
+
+
+def regression_prediction(name, prediction):
+    values = np.asarray(prediction, dtype=float)
+    return np.maximum(0.0, np.expm1(values)) if is_log_regression(name) else values
+
+
 def prepare_splits(train, val, test):
-    """Fit all statistical cleaning/encoding on this training frame only."""
+    """Fit feature encoding on cleaned train/validation/test frames."""
     from . import data_prep as dp
     threshold = float(train.price.median())
-    # Adapter mirrors team's parsing but fits statistical cleaning on TRAIN.
-    # Validation/test outliers are retained: do not delete hard test examples.
-    floor_medians = {}
-    def parse_frame(frame, fit=False):
-        frame = frame.copy()
-        for col in ("currency_x", "currency_y"):
-            if col in frame and not frame[col].dropna().astype(str).str.upper().eq("AZN").all():
-                raise ValueError(f"Non-AZN currency in {col}; agree conversion first")
-        for source, target in (("Sahə", "area_m2"), ("Torpaq sahəsi", "land_area_sot")):
-            if source in frame:
-                frame[target] = dp._number_from_text(frame[source])
-        if "Otaq sayı" in frame:
-            frame["Otaq sayı"] = pd.to_numeric(frame["Otaq sayı"], errors="coerce")
-        if "Mərtəbə" in frame:
-            floors = frame["Mərtəbə"].astype("string").str.extract(r"^\s*(\d+)\s*/\s*(\d+)\s*$")
-            apartment = frame.get("Kateqoriya", pd.Series("", index=frame.index)).isin(dp.APARTMENT_CATEGORIES)
-            for i, col in enumerate(("floor", "total_floors")):
-                frame[col] = pd.to_numeric(floors[i], errors="coerce")
-                frame[col + "_missing"] = frame[col].isna().astype(float)
-                if "Kateqoriya" in frame:
-                    if fit:
-                        floor_medians[col] = frame.loc[apartment].groupby("Kateqoriya")[col].median()
-                    frame.loc[apartment, col] = frame.loc[apartment, col].fillna(
-                        frame.loc[apartment, "Kateqoriya"].map(floor_medians[col]))
-                frame.loc[~apartment, col] = frame.loc[~apartment, col].fillna(0)
-        frame = frame.drop(columns=dp.LEAKAGE_COLUMNS + dp.NON_FEATURE_COLUMNS, errors="ignore")
-        # Listing promotion status may reflect price/exposure; exclude conservatively.
-        frame = frame.drop(columns=["vip", "featured", "products_label"], errors="ignore")
-        return frame.rename(columns=dp.AZERBAIJANI_RENAME)
-
-    # Learn the team's IQR rule only on training prices; trim TRAIN only.
-    q1, q3 = train.price.quantile([.25, .75])
-    low, high = q1 - 1.5*(q3-q1), q3 + 1.5*(q3-q1)
-    if q3 > q1:
-        train = train.loc[train.price.between(low, high)].copy()
-    # Threshold remains the median of the original training split, before trimming.
-    tr = parse_frame(train, fit=True)
-    va, te = parse_frame(val), parse_frame(test)
+    tr, va, te = train.copy(), val.copy(), test.copy()
     # Freeze category vocabulary to prevent binary drop_first switching reference
     # when a validation/test split lacks one training category.
     for col in tr.select_dtypes(include=["object", "string", "category", "bool"]).columns:
@@ -97,7 +76,7 @@ def prepare_splits(train, val, test):
     if not all(np.isfinite(x).all() for x in (Xtr, Xva, Xte)):
         raise ValueError("Non-finite encoded features; inspect training imputation")
     btr, bva, bte = [(y > threshold).astype(int) for y in (ytr, yva, yte)]
-    return Xtr, Xva, Xte, ytr, yva, yte, btr, bva, bte, names, te, low, high, threshold
+    return Xtr, Xva, Xte, ytr, yva, yte, btr, bva, bte, names, te, threshold
 
 
 def main():
@@ -105,6 +84,7 @@ def main():
     root = Path(__file__).resolve().parents[1]
     parser.add_argument("--data", type=Path, default=root / "data" / "house_sale.csv")
     parser.add_argument("--output", type=Path, default=root / "report" / "evaluation")
+    parser.add_argument("--figures", type=Path, default=root / "report" / "figures")
     parser.add_argument("--demo", action="store_true", help="Run synthetic metric examples only")
     parser.add_argument("--max-rows", type=int, default=0)
     parser.add_argument("--iterations", type=int, default=20000)
@@ -127,7 +107,9 @@ def main():
         return
 
     out = args.output.resolve()
+    figures = args.figures.resolve()
     out.mkdir(parents=True, exist_ok=True)
+    figures.mkdir(parents=True, exist_ok=True)
     seed = 42
     raw = dp.load_raw(str(args.data))
     original_rows = len(raw)
@@ -138,11 +120,9 @@ def main():
         known = raw[listing_key].notna() & raw[listing_key].astype(str).str.strip().ne("")
         repeated = known & raw.duplicated(subset=[listing_key], keep="first")
         repeated_listings = int(repeated.sum())
+        print(f"Removing {repeated_listings} repeated listing rows from {original_rows} total rows", flush=True)
         raw = raw.loc[~repeated].copy()
-    raw = raw.drop_duplicates().copy()
-    raw["price"] = dp._number_from_text(raw["price"])
-    raw = raw.loc[np.isfinite(raw.price) & (raw.price > 0)].copy()
-    # No target-derived sampling or global outlier trimming.
+    raw = dp.clean(raw)
     if args.max_rows and len(raw) > args.max_rows:
         raw = raw.sample(n=args.max_rows, random_state=seed)
     train, hold = train_test_split(raw, test_size=.30, random_state=seed)
@@ -156,7 +136,7 @@ def main():
     if args.cv_only:
         cross_validate_training(train, args)
         return
-    Xtr, Xva, Xte, ytr, yva, yte, btr, bva, bte, names, te, low, high, threshold = prepare_splits(train, val, test)
+    Xtr, Xva, Xte, ytr, yva, yte, btr, bva, bte, names, te, threshold = prepare_splits(train, val, test)
     if args.complete_existing:
         complete_existing(train, Xtr, Xte, ytr, yte, args)
         return
@@ -185,6 +165,11 @@ def main():
     for depth in (3, 6):
         params = dict(n_estimators=10, max_depth=depth, min_samples_leaf=5, random_state=seed)
         candidates.setdefault("Forest", []).append((params, lambda p=params: RandomForestRegressor(**p)))
+    for base_name in ("Tree regression", "Ridge", "SVR", "Forest"):
+        for params, factory in candidates[base_name]:
+            candidates.setdefault(base_name + " log", []).append(
+                (params, factory)
+            )
 
     selected, tuning, rows, intervals = {}, [], [], []
     classifications = {"Tree classification", "SVM linear", "SVM RFF"}
@@ -195,9 +180,11 @@ def main():
             print(f"Training {name} [{candidate_index}/{len(choices)}]: {params}", flush=True)
             model = factory()
             start = perf_counter()
-            model.fit(Xtr, btr if classification else ytr)
+            model.fit(Xtr, btr if classification else regression_target(name, ytr))
             elapsed = perf_counter() - start
             pred = model.predict(Xva)
+            if not classification:
+                pred = regression_prediction(name, pred)
             score = ev.precision_recall_f1(bva, pred)[2] if classification else -ev.rmse(yva, pred)
             tuning.append(dict(model=name, parameters=json.dumps(params), validation_score=score, fit_seconds=elapsed))
             pd.DataFrame(tuning).to_csv(out/"validation_search.csv", index=False)
@@ -210,11 +197,16 @@ def main():
     # Baselines use each custom winner's selected settings, not test tuning.
     p = selected["Tree regression"][1]
     baselines = {"sklearn Tree regression": DecisionTreeRegressor(max_depth=p["max_depth"], min_samples_leaf=p["min_samples_leaf"], random_state=seed)}
+    p = selected["Tree regression log"][1]
+    baselines["sklearn Tree regression log"] = DecisionTreeRegressor(max_depth=p["max_depth"], min_samples_leaf=p["min_samples_leaf"], random_state=seed)
     p = selected["Tree classification"][1]
     baselines["sklearn Tree classification"] = DecisionTreeClassifier(criterion=p["criterion"], max_depth=p["max_depth"], min_samples_leaf=p["min_samples_leaf"], random_state=seed)
     baselines["sklearn Ridge"] = make_pipeline(StandardScaler(), Ridge(alpha=selected["Ridge"][1]["lambda_"]))
+    baselines["sklearn Ridge log"] = make_pipeline(StandardScaler(), Ridge(alpha=selected["Ridge log"][1]["lambda_"]))
     p = selected["Forest"][1]
     baselines["sklearn Forest"] = SkForest(**p, max_features="sqrt")
+    p = selected["Forest log"][1]
+    baselines["sklearn Forest log"] = SkForest(**p, max_features="sqrt")
     for label, kernel in (("linear", "linear"), ("RFF", "rbf")):
         p = selected["SVM " + label][1]
         # Same regularization convention; exact RBF differs from approximate RFF.
@@ -223,9 +215,15 @@ def main():
         classifications.add("sklearn SVM " + ("RBF" if label == "RFF" else label))
     classifications.add("sklearn Tree classification")
     baselines["sklearn SVR"] = make_svr_baseline(ytr, selected["SVR"][1])
+    baselines["sklearn SVR log"] = make_svr_baseline(
+        regression_target("SVR log", ytr), selected["SVR log"][1]
+    )
     for name, model in baselines.items():
         start = perf_counter()
-        model.fit(Xtr, btr if name in classifications else ytr)
+        model.fit(
+            Xtr,
+            btr if name in classifications else regression_target(name, ytr),
+        )
         selected[name] = (model, {}, perf_counter()-start)
 
     roc_fig, roc_ax = plt.subplots(figsize=(7, 5))
@@ -233,6 +231,8 @@ def main():
         classification = name in classifications
         start = perf_counter()
         pred = model.predict(Xte)
+        if not classification:
+            pred = regression_prediction(name, pred)
         predict_time = perf_counter()-start
         record = dict(Model=name, Task="B" if classification else "A", Fit_seconds=fit_time, Predict_seconds=predict_time)
         slug = name.replace(" ", "_")
@@ -247,7 +247,7 @@ def main():
                 for j in range(2):
                     ax.text(j, i, str(cm[i,j]), ha="center", va="center")
             ax.set(xticks=[0,1], yticks=[0,1], xticklabels=["standard","premium"], yticklabels=["standard","premium"], xlabel="Predicted", ylabel="True", title=name)
-            fig.tight_layout(); fig.savefig(out/f"confusion_{slug}.png", dpi=140); plt.close(fig)
+            fig.tight_layout(); fig.savefig(figures/f"confusion_{slug}.png", dpi=140); plt.close(fig)
             fpr, tpr, _ = roc_curve(bte, score)
             roc_ax.plot(fpr, tpr, label=f"{name}: {record['ROC_AUC']:.3f}")
             pd.DataFrame(dict(row_id=test.index, true=bte, predicted=pred, premium_score=score)).to_csv(out/f"predictions_{slug}.csv", index=False)
@@ -278,29 +278,54 @@ def main():
                                   bootstrap_samples=len(samples), method="paired test bootstrap; conditional on fitted model"))
         rows.append(record)
         if hasattr(model,"feature_importances_"):
-            pd.DataFrame(dict(feature=names, importance=model.feature_importances_)).sort_values("importance",ascending=False).to_csv(out/f"importance_{slug}.csv",index=False)
+            importance = pd.DataFrame(
+                dict(feature=names, importance=model.feature_importances_)
+            ).sort_values("importance", ascending=False)
+            importance.to_csv(out/f"importance_{slug}.csv", index=False)
+            top = importance.head(10).iloc[::-1]
+            fig, ax = plt.subplots(figsize=(9, 5))
+            ax.barh(top.feature, top.importance)
+            ax.set(xlabel="Normalized impurity-decrease importance",
+                   title=name + " feature importance")
+            fig.tight_layout()
+            fig.savefig(figures/f"feature_importance_{slug}.png", dpi=160)
+            plt.close(fig)
         if name == "SVM linear":
-            pd.DataFrame(dict(feature=names, weight=model.w)).to_csv(out/"svm_standardized_weights.csv",index=False)
+            weights = pd.DataFrame(dict(feature=names, weight=model.w))
+            weights.to_csv(out/"svm_standardized_weights.csv", index=False)
+            top = weights.assign(absolute_weight=weights.weight.abs()).sort_values(
+                "absolute_weight", ascending=False
+            ).head(10).iloc[::-1]
+            fig, ax = plt.subplots(figsize=(9, 5))
+            ax.barh(top.feature, top.weight)
+            ax.set(xlabel="Weight in standardized feature space",
+                   title="Linear SVM: largest absolute weights")
+            fig.tight_layout()
+            fig.savefig(figures/"svm_weights.png", dpi=160)
+            plt.close(fig)
         if hasattr(model,"objective_history"):
             history = np.asarray(model.objective_history)
             fig, ax = plt.subplots()
             ax.plot(history[:,0],history[:,1]); ax.set(xlabel="Iteration",ylabel="Objective",title=name)
-            fig.tight_layout(); fig.savefig(out/f"objective_{slug}.png",dpi=140); plt.close(fig)
+            fig.tight_layout(); fig.savefig(figures/f"objective_{slug}.png",dpi=140); plt.close(fig)
     roc_ax.plot([0,1],[0,1],"k--"); roc_ax.set(xlabel="False positive rate",ylabel="True positive rate",title="Held-out ROC curves")
-    roc_ax.legend(fontsize=7); roc_fig.tight_layout(); roc_fig.savefig(out/"roc.png",dpi=140); plt.close(roc_fig)
+    roc_ax.legend(fontsize=7); roc_fig.tight_layout(); roc_fig.savefig(figures/"roc.png",dpi=140); plt.close(roc_fig)
     pd.DataFrame(rows).to_csv(out/"metrics.csv",index=False)
     pd.DataFrame(intervals).to_csv(out/"metric_intervals.csv",index=False)
     pd.DataFrame(tuning).to_csv(out/"validation_search.csv",index=False)
+    save_summary_plots(pd.DataFrame(rows), pd.DataFrame(tuning), figures)
     manifest = dict(seed=seed, raw_rows=original_rows, duplicate_listing_rows_removed=repeated_listings, sampled_rows=len(raw), max_rows=args.max_rows,
                     train_rows=len(ytr), validation_rows=len(yva), test_rows=len(yte), features=names,
-                    premium_threshold=threshold, train_outlier_bounds=[low,high],
+                    premium_threshold=threshold, cleaning="data_prep.clean applied before splitting",
+                    regression_targets={"raw": "price", "log": "log1p(price), inverse-transformed with expm1"},
+                    figures=str(figures),
                     selected_parameters={n:p for n,(_,p,_) in selected.items()},
                     data_sha256=hashlib.file_digest(args.data.open("rb"),"sha256").hexdigest(),
-                    limitations=["Pilot if max_rows > 0; not full-dataset results", "No cross-validation uncertainty yet", "Raw-price targets; outliers retained in val/test", "Local train-only cleaning adapter differs from team clean()", "RFF approximation vs exact RBF baseline", "Independent random first split; only held-out division stratified"])
+                    limitations=["Pilot if max_rows > 0; not full-dataset results", "Raw-price targets; shared clean() runs before splitting", "RFF approximation vs exact RBF baseline", "Independent random first split; only held-out division stratified"])
     (out/"manifest.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
     print(pd.DataFrame(rows).to_string(index=False))
     print(f"Outputs: {out}")
-    analyze_saved_results(out)
+    analyze_saved_results(out, figures)
     if not args.skip_cv:
         # Reconstruct original untrimmed training partition for fold fitting.
         cross_validate_training(train, args)
@@ -325,31 +350,44 @@ def cross_validate_training(training_frame, args):
     factories = {"Tree regression": DecisionTree, "Tree classification": DecisionTree,
                  "SVM linear": PegasosSVM, "SVM RFF": PegasosSVM,
                  "Ridge": RidgeRegression, "SVR": PegasosSVR, "Forest": RandomForestRegressor}
+    for base_name in ("Tree regression", "Ridge", "SVR", "Forest"):
+        factories[base_name + " log"] = factories[base_name]
     classifications = {"Tree classification", "SVM linear", "SVM RFF", "sklearn Tree classification", "sklearn SVM linear", "sklearn SVM RBF"}
     rows = []
     splitter = KFold(n_splits=args.cv_folds, shuffle=True, random_state=42)
     for fold, (itr, iva) in enumerate(splitter.split(training_frame), 1):
         foldtrain, foldval = training_frame.iloc[itr], training_frame.iloc[iva]
-        Xtr, Xva, _, ytr, yva, _, btr, bva, _, _, _, _, _, _ = prepare_splits(foldtrain, foldval, foldval)
+        Xtr, Xva, _, ytr, yva, _, btr, bva, _, _, _, _ = prepare_splits(foldtrain, foldval, foldval)
         models = {name: factory(**manifest["selected_parameters"][name]) for name, factory in factories.items()}
         p = manifest["selected_parameters"]["Tree regression"]
         models["sklearn Tree regression"] = DecisionTreeRegressor(max_depth=p["max_depth"], min_samples_leaf=p["min_samples_leaf"], random_state=42)
         p = manifest["selected_parameters"]["Tree classification"]
         models["sklearn Tree classification"] = DecisionTreeClassifier(criterion=p["criterion"],max_depth=p["max_depth"],min_samples_leaf=p["min_samples_leaf"],random_state=42)
         models["sklearn Ridge"] = make_pipeline(StandardScaler(), Ridge(alpha=manifest["selected_parameters"]["Ridge"]["lambda_"]))
+        models["sklearn Ridge log"] = make_pipeline(StandardScaler(), Ridge(alpha=manifest["selected_parameters"]["Ridge log"]["lambda_"]))
         models["sklearn Forest"] = SkForest(**manifest["selected_parameters"]["Forest"], max_features="sqrt")
+        models["sklearn Forest log"] = SkForest(**manifest["selected_parameters"]["Forest log"], max_features="sqrt")
+        p = manifest["selected_parameters"]["Tree regression log"]
+        models["sklearn Tree regression log"] = DecisionTreeRegressor(
+            max_depth=p["max_depth"], min_samples_leaf=p["min_samples_leaf"], random_state=42
+        )
         for label, kernel in (("linear", "linear"), ("RFF", "rbf")):
             p = manifest["selected_parameters"]["SVM " + label]
             name = "sklearn SVM " + ("RBF" if label == "RFF" else label)
             models[name] = make_pipeline(StandardScaler(), SVC(C=1/(len(ytr)*p["lambda_"]), kernel=kernel,gamma=.01,random_state=42))
         models["sklearn SVR"] = make_svr_baseline(ytr, manifest["selected_parameters"]["SVR"])
+        models["sklearn SVR log"] = make_svr_baseline(
+            regression_target("SVR log", ytr), manifest["selected_parameters"]["SVR log"]
+        )
         for name, model in models.items():
             print(f"CV fold {fold}/{args.cv_folds}: training {name}", flush=True)
             classification = name in classifications
             begin = perf_counter()
-            model.fit(Xtr, btr if classification else ytr)
+            model.fit(Xtr, btr if classification else regression_target(name, ytr))
             fit_seconds = perf_counter()-begin
             pred = model.predict(Xva)
+            if not classification:
+                pred = regression_prediction(name, pred)
             if classification:
                 scores = model.decision_function(Xva) if hasattr(model,"decision_function") else model.predict_proba(Xva)[:,1]
                 metrics = classification_metrics(bva,pred,scores)
@@ -366,7 +404,7 @@ def cross_validate_training(training_frame, args):
     (args.output/"cv_protocol.json").write_text(json.dumps(dict(
         folds=args.cv_folds, seed=42, scope="Original training partition only; training-fitted preprocessing in each fold",
         selection="Fixed configurations previously selected on validation; non-nested, conditional CV, not an unbiased nested selection estimate",
-        tier="Training-fold price median; outliers removed from fit fold only", final_test="Not accessed in CV scoring"),indent=2),encoding="utf-8")
+        tier="Training-fold price median; shared clean() applied before the original split", final_test="Not accessed in CV scoring"),indent=2),encoding="utf-8")
     print("Training-only CV complete",flush=True)
 
 
@@ -381,8 +419,48 @@ def make_svr_baseline(y_train, parameters):
     return TransformedTargetRegressor(regressor=model, transformer=StandardScaler())
 
 
-def analyze_saved_results(out):
+def save_summary_plots(metrics, tuning, figures):
+    figures.mkdir(parents=True, exist_ok=True)
+    regression = metrics[metrics.Task == "A"].copy()
+    if not regression.empty:
+        fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+        for axis, metric in zip(axes, ("RMSE", "MAE", "R2")):
+            axis.bar(regression.Model, regression[metric])
+            axis.set_title(metric + " (AZN)" if metric != "R2" else metric)
+            axis.tick_params(axis="x", rotation=75, labelsize=7)
+            axis.grid(axis="y", alpha=.25)
+        fig.suptitle("Raw-price and log-price regression comparison")
+        fig.tight_layout()
+        fig.savefig(figures / "regression_comparison.png", dpi=160)
+        plt.close(fig)
+    classification = metrics[metrics.Task == "B"].copy()
+    if not classification.empty:
+        fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+        for axis, metric in zip(axes, ("F1", "ROC_AUC")):
+            axis.bar(classification.Model, classification[metric])
+            axis.set_title(metric.replace("_", "-"))
+            axis.tick_params(axis="x", rotation=75, labelsize=7)
+            axis.grid(axis="y", alpha=.25)
+        fig.suptitle("Classification comparison")
+        fig.tight_layout()
+        fig.savefig(figures / "classification_comparison.png", dpi=160)
+        plt.close(fig)
+    if not tuning.empty:
+        fig, axis = plt.subplots(figsize=(10, 5))
+        for name, frame in tuning.groupby("model", sort=False):
+            axis.plot(np.arange(len(frame)), frame.validation_score, "o-", label=name)
+        axis.set(xlabel="Candidate order", ylabel="Validation score",
+                 title="Validation search (F1 or negative RMSE)")
+        axis.legend(fontsize=7, ncol=2)
+        fig.tight_layout()
+        fig.savefig(figures / "validation_search.png", dpi=160)
+        plt.close(fig)
+
+
+def analyze_saved_results(out, figures=None):
     """Regenerate derived tables/figures from saved predictions; no training."""
+    figures = out / "figures" if figures is None else Path(figures)
+    figures.mkdir(parents=True, exist_ok=True)
     metrics = pd.read_csv(out/"metrics.csv")
     metrics.Model = metrics.Model.replace({"sklearn SVM RFF":"sklearn SVM RBF"})
     metrics.to_csv(out/"comparison_table.csv",index=False)
@@ -398,7 +476,7 @@ def analyze_saved_results(out):
         roc_ax.plot(fpr,tpr,label=name)
     roc_ax.plot([0,1],[0,1],"k--")
     roc_ax.set(xlabel="False positive rate",ylabel="True positive rate",title="Held-out ROC curves")
-    roc_ax.legend(fontsize=7);roc_fig.tight_layout();roc_fig.savefig(out/"roc_corrected_labels.png",dpi=160);plt.close(roc_fig)
+    roc_ax.legend(fontsize=7);roc_fig.tight_layout();roc_fig.savefig(figures/"roc_corrected_labels.png",dpi=160);plt.close(roc_fig)
     pd.DataFrame(classification_rows).to_csv(out/"classification_error_summary.csv",index=False)
     for path in sorted(out.glob("errors_*.csv")):
         frame = pd.read_csv(path)
@@ -414,7 +492,7 @@ def analyze_saved_results(out):
         frame = pd.read_csv(out/f"importance_{name}.csv").head(10).iloc[::-1]
         fig,ax=plt.subplots(figsize=(9,5));ax.barh(frame.feature,frame.importance)
         ax.set(xlabel="Normalized impurity-decrease importance",title=name.replace("_"," "))
-        fig.tight_layout();fig.savefig(out/f"feature_importance_{name}.png",dpi=160);plt.close(fig)
+        fig.tight_layout();fig.savefig(figures/f"feature_importance_{name}.png",dpi=160);plt.close(fig)
     frame=pd.read_csv(out/"svm_standardized_weights.csv")
     frame["absolute_weight"]=frame.weight.abs()
     frame=frame.sort_values("absolute_weight",ascending=False)
@@ -422,7 +500,8 @@ def analyze_saved_results(out):
     top=frame.head(10).iloc[::-1];fig,ax=plt.subplots(figsize=(9,5))
     ax.barh(top.feature,top.weight,color=["tab:blue" if v>=0 else "tab:red" for v in top.weight])
     ax.set(xlabel="Weight in standardized feature space",title="Linear SVM: largest absolute weights")
-    fig.tight_layout();fig.savefig(out/"svm_weights.png",dpi=160);plt.close(fig)
+    fig.tight_layout();fig.savefig(figures/"svm_weights.png",dpi=160);plt.close(fig)
+    save_summary_plots(metrics, pd.read_csv(out/"validation_search.csv"), figures)
 
 
 def complete_existing(training_frame, Xtr, Xte, ytr, yte, args):
@@ -476,7 +555,7 @@ def complete_existing(training_frame, Xtr, Xte, ytr, yte, args):
     manifest["protocol_status"]="Training-only IQR protocol pending team agreement; results conditional on this choice"
     manifest["selected_parameters"]["sklearn SVR"]={"kernel":"linear","C_convention":"1/(n_train*lambda)","target_scaling":"training mean/std","epsilon":"original epsilon / training target std"}
     (out/"manifest.json").write_text(json.dumps(manifest,indent=2),encoding="utf-8")
-    analyze_saved_results(out)
+    analyze_saved_results(out, args.figures)
     print("Saved-result completion finished",flush=True)
 
 

@@ -1,4 +1,6 @@
-
+# --- Data: never commit the raw archive or the extracted dataset ---
+data/*
+!data/README.md
 
 # --- Python ---
 __pycache__/

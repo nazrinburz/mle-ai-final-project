@@ -33,6 +33,7 @@ NON_FEATURE_COLUMNS: list[str] = [
     "hour_y", "currency_x", "currency_y", "img_url", "description",
     "owner_name", "owner_title", "shop_name", "shop_title", "address",
     "updated", "extra_info", "attributes", "city_when", "views",
+    "vip", "featured", "products_label",
     # English/second-table aliases of the Azerbaijani property fields kept
     # below, plus their raw unit-formatted source columns.
     "repair", "bill_of_sale", "mortgage", "Mərtəbə", "Sahə", "Torpaq sahəsi",
