@@ -26,16 +26,19 @@ Scikit-learn model classes are used for comparison baselines, not inside the cus
 
 ## Setup
 
-Use **Python 3.11** with the pinned dependencies. Python 3.13 is incompatible with the pinned NumPy 1.26.4 installation.
+Install Git and Git LFS first. Use **Python 3.11** with the pinned dependencies. Python 3.13 is incompatible with the pinned NumPy 1.26.4 installation.
 
 ### Windows PowerShell
 
 ```powershell
 git clone https://github.com/nazrinburz/mle-ai-final-project.git
 cd mle-ai-final-project
+git lfs install --local
 py -3.11 -m venv .venv311
 .\.venv311\Scripts\python.exe -m pip install -r requirements.txt
 ```
+
+If `py -3.11` cannot find an installed interpreter, install/register Python 3.11 or use its explicit executable path to create the virtual environment.
 
 ### Linux / macOS
 
@@ -44,6 +47,7 @@ With Python 3.11 installed:
 ```bash
 git clone https://github.com/nazrinburz/mle-ai-final-project.git
 cd mle-ai-final-project
+git lfs install --local
 python3.11 -m venv .venv311
 .venv311/bin/python -m pip install -r requirements.txt
 ```
@@ -58,15 +62,17 @@ The default evaluation input is:
 data/house_sale.csv
 ```
 
-Obtain the exact joined export used for the final run and place the actual CSV at `data/house_sale.csv`, or supply its path with `--data`. The dataset is no longer tracked in the current revision, so Git LFS pull is not a current retrieval method. The file is missing from this checkout as checked on 18 October 2026.
+The exact joined export is recoverable from historical Git LFS storage; it is not tracked in the current revision. After installing Git LFS and completing the environment/dependency setup above, run from the repository root:
 
-Expected dataset SHA-256:
-
-```text
-c9ec2ded82c2e93ab7ad13ad6aed2f6d540d890c3d8d089a8ce9fdb65a3bb7e6
+```powershell
+.\.venv311\Scripts\python.exe -m src.fetch_dataset
 ```
 
-The Kaggle link identifies the source dataset; an arbitrary CSV downloaded there is not established to be equivalent to the team's joined export. Exact download/join preparation instructions for that export are not documented here and remain a reproducibility gap. Obtain the matching export or its preparation instructions from the team, verify its hash, and ensure its schema matches `src/data_prep.py`.
+This fetches `data/house_sale.csv` from commit `419ebacf59de3723fa7252fed7d972badcffe583`, verifies SHA-256, and writes `data/house_sale.csv` without adding it to Git. No join, conversion, or resaving is needed: it retrieves the exact prepared export. The helper refuses to overwrite a file with a different hash. Git LFS server access must remain available.
+
+Expected SHA-256: `c9ec2ded82c2e93ab7ad13ad6aed2f6d540d890c3d8d089a8ce9fdb65a3bb7e6` (141,782,218 bytes). Retrieval was tested on 18 October 2026 into isolated temporary storage with `python -m src.fetch_dataset --output tmp/retrieved/house_sale.csv`; the hash and byte count matched. The helper fetches the historical commit automatically if a shallow clone lacks it. A fresh shallow-clone test also passed after local Git LFS setup and pinned dependency installation; no existing LFS cache was copied. See [data/README.md](data/README.md) for access and fallback requirements.
+
+The Kaggle link identifies the original source, not a verified replacement CSV. No deterministic original join recipe was found in repository scripts/history. If historical LFS becomes unavailable, obtain the exact export from the data owner, or obtain the source archive version and filenames, join keys/type/cardinality, duplicate ordering, transformations, and export/encoding rules needed to reconstruct it. Do not infer these from column suffixes. Use `--data path/to/house_sale.csv` for another local location.
 
 Keep Azerbaijani column names correctly encoded in UTF-8. Do not commit downloaded dataset archives or redistribute personal listing information.
 
@@ -100,7 +106,7 @@ The saved final results are in `report/evaluation-clean-log/`, including `metric
 
 The command generates the report's four figure filenames: `regression_comparison.png`, `classification_comparison.png`, `feature_importance_Tree_regression.png`, and `roc.png`. Existing copies are in `report/figures/`; the reproduction command writes new copies to `report/reproduced-figures/`. File existence alone does not verify a fresh numerical reproduction.
 
-The high-price-band MAE is not emitted as a dedicated summary by `run_all.py`; derive it from the matching run's `errors_Tree_regression.csv` by selecting `true>500000` and averaging `absolute_error`.
+The command now emits `high_price_error_summary.csv`: each regression model's count and mean absolute error for `true>500000`. Verified final tree errors give 307 properties and MAE 169,358.57 AZN. The report's roughly 165,000 AZN statement is inconsistent with those errors and cannot be reproduced exactly; the report has not been edited. See [the claim-to-code map](report/reproduction.md) for all headline tables, narrative numbers, and figures.
 
 PDF compilation is separate from scientific result reproduction. The evaluation command does not compile the report or slides, and that alone is not evidence that model results are irreproducible. To rebuild the report document, compile `report/report.tex` with a LaTeX toolchain (for example, run `pdflatex report.tex` twice from `report/`). Editable slide source and its build instructions are not present in `presentation/` and would be needed to regenerate the presentation PDF.
 
