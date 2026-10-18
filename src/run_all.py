@@ -317,6 +317,8 @@ def main():
     manifest = dict(seed=seed, raw_rows=original_rows, duplicate_listing_rows_removed=repeated_listings, sampled_rows=len(raw), max_rows=args.max_rows,
                     train_rows=len(ytr), validation_rows=len(yva), test_rows=len(yte), features=names,
                     premium_threshold=threshold, cleaning="data_prep.clean applied before splitting",
+                    tier_counts={name:np.bincount(labels,minlength=2).tolist()
+                                 for name,labels in (("train",btr),("validation",bva),("test",bte))},
                     regression_targets={"raw": "price", "log": "log1p(price), inverse-transformed with expm1"},
                     figures=str(figures),
                     selected_parameters={n:p for n,(_,p,_) in selected.items()},
@@ -465,6 +467,7 @@ def analyze_saved_results(out, figures=None):
     metrics.Model = metrics.Model.replace({"sklearn SVM RFF":"sklearn SVM RBF"})
     metrics.to_csv(out/"comparison_table.csv",index=False)
     classification_rows, regression_rows = [], []
+    price_band_rows=[]
     roc_fig, roc_ax = plt.subplots(figsize=(8,5))
     for path in sorted(out.glob("predictions_*.csv")):
         frame = pd.read_csv(path)
@@ -482,12 +485,18 @@ def analyze_saved_results(out, figures=None):
         frame = pd.read_csv(path)
         if "true" not in frame:
             continue
+        high=frame.loc[frame["true"]>500000,"absolute_error"]
+        price_band_rows.append(dict(
+            model=path.stem.removeprefix("errors_").replace("_"," "),
+            price_lower_exclusive=500000,count=len(high),MAE=high.mean(),
+        ))
         errors = np.sort(frame.absolute_error.to_numpy())[::-1]
         regression_rows.append(dict(model=path.stem.removeprefix("errors_").replace("_"," "),
             median_absolute_error=np.median(errors),
             top_10_squared_error_percent=100*np.sum(errors[:10]**2)/np.sum(errors**2),
             max_absolute_error=errors[0]))
     pd.DataFrame(regression_rows).to_csv(out/"regression_error_summary.csv",index=False)
+    pd.DataFrame(price_band_rows).to_csv(out/"high_price_error_summary.csv",index=False)
     for name in ("Tree_classification","Tree_regression","Forest"):
         frame = pd.read_csv(out/f"importance_{name}.csv").head(10).iloc[::-1]
         fig,ax=plt.subplots(figsize=(9,5));ax.barh(frame.feature,frame.importance)
