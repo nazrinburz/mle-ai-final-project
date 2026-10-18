@@ -58,13 +58,15 @@ The default evaluation input is:
 data/house_sale.csv
 ```
 
-Ensure this is the actual CSV rather than a Git LFS pointer. If the repository provides it through Git LFS, install Git LFS and run:
+Obtain the exact joined export used for the final run and place the actual CSV at `data/house_sale.csv`, or supply its path with `--data`. The dataset is no longer tracked in the current revision, so Git LFS pull is not a current retrieval method. The file is missing from this checkout as checked on 18 October 2026.
 
-```bash
-git lfs pull
+Expected dataset SHA-256:
+
+```text
+c9ec2ded82c2e93ab7ad13ad6aed2f6d540d890c3d8d089a8ce9fdb65a3bb7e6
 ```
 
-Alternatively, obtain the dataset from the source and supply the corresponding input CSV using `--data`. The input must match the column schema expected by `src/data_prep.py`.
+The Kaggle link identifies the source dataset; an arbitrary CSV downloaded there is not established to be equivalent to the team's joined export. Exact download/join preparation instructions for that export are not documented here and remain a reproducibility gap. Obtain the matching export or its preparation instructions from the team, verify its hash, and ensure its schema matches `src/data_prep.py`.
 
 Keep Azerbaijani column names correctly encoded in UTF-8. Do not commit downloaded dataset archives or redistribute personal listing information.
 
@@ -75,16 +77,32 @@ Run commands from the repository root.
 ### Full evaluation — Windows
 
 ```powershell
-.\.venv311\Scripts\python.exe -m src.run_all
+.\.venv311\Scripts\python.exe -m src.run_all --output report/reproduced-evaluation --figures report/reproduced-figures
 ```
 
 ### Full evaluation — Linux / macOS
 
 ```bash
-.venv311/bin/python -m src.run_all
+.venv311/bin/python -m src.run_all --output report/reproduced-evaluation --figures report/reproduced-figures
 ```
 
 The full run performs validation-based model selection, matched baseline comparisons, held-out evaluation, and training-only cross-validation. Exhaustive custom-tree split searches can make the full run slow.
+
+These commands use the full dataset, 20,000 iterations, seed 42, and three-fold training-only cross-validation by default. Obtain the input CSV first as described above. Use `--data path/to/house_sale.csv` if it is stored elsewhere. Do not launch another full evaluation while one is already running. The separate reproduction directories preserve saved final results; choose unused output paths if these directories already contain a run to retain.
+
+### Reproduction audit and remaining steps
+
+The saved final results are in `report/evaluation-clean-log/`, including `metrics.csv`, `manifest.json`, and saved prediction/error summaries. The saved final headline metrics match the report at its displayed precision: raw tree RMSE 71,741 AZN, MAE 48,559 AZN and R² 0.660; log tree RMSE 74,011 AZN; tree classifier F1 0.873 and ROC-AUC 0.943. The final manifest records 59,697 cleaned rows, a 41,787 / 8,955 / 8,955 split, 167 features, a 195,000 AZN premium threshold, and shared `data_prep.clean()` before splitting.
+
+`report/evaluation/` contains older results from a different cleaning protocol. Its metrics must not be used to assess agreement with the final report or combined with the final run's outputs.
+
+**Saved final metrics match the report; a fresh full end-to-end reproduction has not been verified.** No new full evaluation was run for this audit. Once the matching dataset is available and any active evaluation has finished, run the command above and compare the new manifest, metrics (including raw/log models), selected settings, CV outputs, and generated figures with the saved final evidence. Runtime measurements vary with hardware and load.
+
+The command generates the report's four figure filenames: `regression_comparison.png`, `classification_comparison.png`, `feature_importance_Tree_regression.png`, and `roc.png`. Existing copies are in `report/figures/`; the reproduction command writes new copies to `report/reproduced-figures/`. File existence alone does not verify a fresh numerical reproduction.
+
+The high-price-band MAE is not emitted as a dedicated summary by `run_all.py`; derive it from the matching run's `errors_Tree_regression.csv` by selecting `true>500000` and averaging `absolute_error`.
+
+PDF compilation is separate from scientific result reproduction. The evaluation command does not compile the report or slides, and that alone is not evidence that model results are irreproducible. To rebuild the report document, compile `report/report.tex` with a LaTeX toolchain (for example, run `pdflatex report.tex` twice from `report/`). Editable slide source and its build instructions are not present in `presentation/` and would be needed to regenerate the presentation PDF.
 
 ### Small pipeline check
 
@@ -114,12 +132,15 @@ Supported options include `--data`, `--output`, `--figures`, `--max-rows`, `--it
 
 Bootstrap intervals and cross-validation standard deviations represent different sources of uncertainty and should not be interpreted interchangeably.
 
-Default output locations:
+Saved results and output locations:
 
 | Location | Contents |
 |----------|----------|
-| `report/evaluation/` | Metrics, validation searches, predictions, error summaries, importance tables, run manifest, and CV outputs |
-| `report/figures/` | Comparison plots, confusion matrices, ROC curves, feature importances, and objective curves |
+| `report/evaluation-clean-log/` | Saved final metrics, manifest, predictions, error summaries, and other evaluation outputs supporting the report |
+| `report/figures/` | Existing report figures |
+| `report/reproduced-evaluation/` | New metrics, validation searches, predictions, error summaries, importance tables, manifest, and CV outputs from the reproduction command |
+| `report/reproduced-figures/` | New comparison plots, confusion matrices, ROC curves, feature importances, and objective curves |
+| `report/evaluation/` | Older evaluation outputs; also the script default when `--output` is omitted |
 
 ## Data Protocol and Limitations
 
